@@ -1,0 +1,154 @@
+# Data Model (MVP) — AI HR Absenteeism Anomaly Detection
+
+This document describes the tables used in BigQuery and why each table matters for the project.
+
+---
+
+## BigQuery Datasets
+
+### `raw` (ingestion / staging)
+- Purpose: store ingested data as-is (or minimally sanitized for loadability).
+- Design choice: `raw.attendance_daily` was loaded with all columns as **STRING** to avoid ingestion/type inference failures.
+
+### `analytics` (curated / business-ready)
+- Purpose: typed, validated, and aggregated tables used by HRBP workflows and Power BI.
+
+---
+
+## RAW Tables (Canonical)
+
+### `raw.attendance_daily`
+**Grain:** employee-day (one row per employee per date)  
+**Key columns:** `date`, `employee_id`, `department_id`, `shift_id`  
+**Measures:** `scheduled_minutes`, `absence_minutes`, `is_absent`, `absence_reason`  
+**Why it matters (value):**
+- It is the **core event table** for absenteeism.
+- All downstream metrics (absence rate, baselines, anomaly flags) depend on it.
+- Loaded as STRING for robustness; typing happens in `analytics`.
+
+**Notes / quality considerations:**
+- Original CSV (`attendance_daily.csv`) contains malformed rows → ingestion uses a deterministic sanitized file.
+- Some numeric values may arrive as `"1.0"` strings → handled via `STRING → FLOAT64 → INT64` casting in `analytics`.
+
+---
+
+### `raw.employees_dirty`
+**Grain:** employee (intentionally contains duplicates / missing values)  
+**Key columns (typical):** `employee_id`, `department_id`, job/contract fields  
+**Why it matters (value):**
+- Provides the **employee dimension** used for context and filtering (e.g., department mapping).
+- Demonstrates ingestion of “dirty” HR master data and the need for downstream validation.
+
+---
+
+### `raw.departments`
+**Grain:** department  
+**Key columns:** `department_id`, `department_name`  
+**Why it matters (value):**
+- Standardizes the organizational structure used to aggregate absenteeism signals.
+- Enables HRBP drill-down by area.
+
+---
+
+### `raw.shifts`
+**Grain:** shift type  
+**Key columns:** `shift_id`, `shift_name`, `start_time`, `end_time`  
+**Why it matters (value):**
+- Enables anomaly detection by **department + shift**, which matches the business goal (HRBP monitoring by area/turn).
+
+---
+
+### `raw.engagement`
+**Grain:** employee-month survey record  
+**Key columns:** `employee_id`, `survey_month`  
+**Measures:** `enps_score`, `satisfaction_1_5`  
+**Why it matters (value):**
+- Optional enrichment table for later iterations:
+  - correlate higher absenteeism periods with engagement changes
+  - support root-cause hypotheses (Phase 2)
+
+---
+
+### `raw.performance_reviews`
+**Grain:** employee-review event  
+**Key columns:** `employee_id`, `review_date`  
+**Measures:** `rating`  
+**Why it matters (value):**
+- Optional enrichment table for later iterations:
+  - investigate whether absenteeism anomalies co-occur with performance patterns (Phase 2)
+
+---
+
+### `raw.exits`
+**Grain:** employee exit event  
+**Key columns:** `employee_id`, `exit_date`, `exit_reason`  
+**Why it matters (value):**
+- Optional enrichment table for later iterations:
+  - analyze whether persistent anomalies precede attrition spikes (Phase 2)
+
+---
+
+## ANALYTICS Tables (Curated)
+
+### `analytics.attendance_clean`
+**Grain:** employee-day  
+**Built from:** `raw.attendance_daily`  
+**Key transformations:**
+- Parse `date` from 2 formats: `YYYY-MM-DD` and `DD-MM-YYYY`
+- Cast types safely with `SAFE_CAST` and `STRING → FLOAT64 → INT64` for numeric fields
+- Filter invalid shifts and impossible ranges (minutes, flags)
+
+**Why it matters (value):**
+- Creates a **typed, validated** foundation that downstream analytics can trust.
+- Separates ingestion concerns from business logic (production-like pipeline).
+
+---
+
+### `analytics.absence_daily`
+**Grain:** department-day-shift  
+**Built from:** `analytics.attendance_clean`  
+**Columns:**
+- `scheduled_headcount`
+- `absent_headcount`
+- `absence_rate`
+
+**Why it matters (value):**
+- Produces the key KPI time series needed for:
+  - HRBP dashboards
+  - baseline computation
+  - anomaly detection
+
+---
+
+### `analytics.anomaly_alerts`
+**Grain:** department-day-shift  
+**Built from:** `analytics.absence_daily`  
+**Method (MVP):**
+- Rolling baseline using prior 28 days:
+  - `mean_28d`, `std_28d`, `z_score`
+- Constraints for stability:
+  - `hist_days >= 14`
+  - `scheduled_headcount >= 20`
+- Outputs:
+  - `is_anomaly` (0/1)
+  - `alert_severity` (Normal/Low/Medium/High/Insufficient baseline)
+
+**Why it matters (value):**
+- This is the **decision table** for HRBPs:
+  - highlights where absenteeism is unusually high today
+  - provides severity and context to prioritize investigation
+- Serves as the primary Power BI dataset for the MVP dashboard.
+
+---
+
+## Relationships (MVP)
+- `attendance_clean.employee_id` → `employees_dirty.employee_id` (optional join for context)
+- `attendance_clean.department_id` → `departments.department_id`
+- `attendance_clean.shift_id` → `shifts.shift_id`
+- `absence_daily` and `anomaly_alerts` are aggregates by `date + department_id + shift_id`
+
+---
+
+## Notes on Privacy & Intended Use
+- Data is synthetic (no real PII).
+- Outputs are intended for **team-level** monitoring (department + shift), not individual surveillance.

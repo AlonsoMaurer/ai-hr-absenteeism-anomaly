@@ -71,6 +71,10 @@ We separate ingestion from curated analytics to keep the pipeline production-lik
 
 This demonstrates **reproducible ingestion** rather than manual fixes.
 
+**Ingestion helper (versioned):**
+- Script: `python/sanitize_attendance.py` → generates `attendance_daily_ingest.csv` + `ingestion_log.json`
+- Evidence: `ingestion_log.json` is a single structured log capturing rows kept/dropped and reasons.
+
 ### B) Load raw attendance as STRING
 To avoid BigQuery type inference issues during ingestion, `raw.attendance_daily` was loaded with **all columns as STRING**.
 

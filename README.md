@@ -152,6 +152,27 @@ The current pipeline run on 6 months of synthetic attendance data produced the f
 **Planned improvement:**  
 The current baseline uses mean + standard deviation (z-score). A more robust alternative is median + MAD (Median Absolute Deviation), which is less sensitive to historical outliers. This is documented as a next step — the MVP prioritizes an end-to-end working system over a perfect statistical model.
 
+### E) Department ID deduplication and unmatched records
+
+`raw.departments` contains duplicate entries for the same canonical department 
+under different IDs and name variants:
+
+| department_id | department_name | Issue |
+|---|---|---|
+| 2 | Finanze | Typo — duplicate of Finance (ID 3) |
+| 3 | Finance | Canonical |
+| 4 | HR | Canonical |
+| 9 | H.R. | Duplicate of HR (ID 4) |
+
+**Decision:** `analytics.departments_clean` standardizes names and keeps the 
+lowest `department_id` for each canonical department via `ROW_NUMBER()`.
+
+**Known consequence:** anomaly records associated with deduplicated IDs (2 and 9) 
+produce unmatched rows in the Power BI join. These appear as blank 
+`department_name` values and are filtered out at the visualization layer.
+
+**Production fix:** a remapping step in SQL would reassign orphaned IDs to their 
+canonical counterpart before the join. Documented as a future improvement.
 ---
 
 ## 6) SQL Execution Order (BigQuery)

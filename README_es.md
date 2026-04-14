@@ -1,4 +1,5 @@
 # Detección de Anomalías de Ausentismo con IA (MVP)
+> 🇬🇧 [English version available here](README.md)
 
 Proyecto de portfolio de AI Engineering end-to-end: **detección diaria de anomalías de ausentismo** por **área + turno** para HRBPs, usando **BigQuery (SQL)** + **Python** + **Power BI** + **GitHub**.
 
@@ -85,6 +86,7 @@ Separamos la ingesta de los datos analíticos curados para mantener un pipeline 
 - `analytics.attendance_clean` (tipada + validada)
 - `analytics.absence_daily` (métricas diarias por área + turno)
 - `analytics.anomaly_alerts` (flags de anomalía diarios + severidad)
+- `analytics.departments_clean` (nombres de área deduplicados + estandarizados)
 
 ---
 
@@ -131,8 +133,6 @@ Usamos una línea base simple y confiable que corre nativamente en BigQuery:
 
 #### Hallazgos clave — Ejecución MVP sobre datos sintéticos
 
-La ejecución actual del pipeline sobre 6 meses de datos sintéticos produjo los siguientes resultados:
-
 | Métrica | Valor |
 |---|---|
 | Empleados en el dataset | 3.425 |
@@ -145,11 +145,28 @@ La ejecución actual del pipeline sobre 6 meses de datos sintéticos produjo los
 
 **Qué significa esto operacionalmente:**
 - En un día promedio, **0 a 3 combinaciones área-turno** aparecerían en el dashboard del HRBP requiriendo atención
-- La tasa de alertas de 1,4% es consistente con las tasas esperadas de anomalías en una organización saludable — demasiado baja sugiere que el umbral es muy estricto; demasiado alta sugiere ruido
-- El umbral de z-score ≥ 3 fue calibrado para minimizar falsos positivos para los HRBPs: solo afloran las desviaciones estadísticamente significativas
+- La tasa de alertas de 1,4% es consistente con las tasas esperadas en una organización saludable
+- El umbral de z-score ≥ 3 fue calibrado para minimizar falsos positivos: solo afloran las desviaciones estadísticamente significativas
 
 **Mejora planificada:**  
-La línea base actual usa media + desviación estándar (z-score). Una alternativa más robusta es mediana + MAD (Desviación Absoluta de la Mediana), que es menos sensible a valores atípicos históricos. El MVP prioriza un sistema funcional end-to-end sobre un modelo estadístico perfecto.
+La línea base actual usa media + desviación estándar (z-score). Una alternativa más robusta es mediana + MAD (Desviación Absoluta de la Mediana), menos sensible a valores atípicos históricos. El MVP prioriza un sistema funcional end-to-end sobre un modelo estadístico perfecto.
+
+### E) Deduplicación de áreas y registros sin match
+
+`raw.departments` contiene entradas duplicadas para el mismo departamento canónico bajo distintos IDs y variantes de nombre:
+
+| department_id | department_name | Problema |
+|---|---|---|
+| 2 | Finanze | Typo — duplicado de Finance (ID 3) |
+| 3 | Finance | Canónico |
+| 4 | HR | Canónico |
+| 9 | H.R. | Duplicado de HR (ID 4) |
+
+**Decisión:** `analytics.departments_clean` estandariza los nombres y conserva el `department_id` más bajo para cada departamento canónico mediante `ROW_NUMBER()`.
+
+**Consecuencia conocida:** los registros de anomalías asociados a los IDs deduplicados (2 y 9) generan filas sin match en el join de Power BI. Estos aparecen como valores en blanco en `department_name` y se filtran en la capa de visualización.
+
+**Corrección en producción:** un paso de remapeo en SQL reasignaría los IDs huérfanos a su contraparte canónica antes del join. Documentado como mejora futura.
 
 ---
 
@@ -168,6 +185,10 @@ Ejecutar la capa analytics en este orden exacto:
    Crea: `analytics.anomaly_alerts`  
    Archivo: `sql/analytics/anomaly_alerts.sql`
 
+4) **departments_clean**  
+   Crea: `analytics.departments_clean`  
+   Archivo: `sql/analytics/departments_clean.sql`
+
 ### QA (recomendado)
 Después de cada paso, ejecutar:
 - `sql/qa/attendance_clean_checks.sql`
@@ -180,7 +201,8 @@ Después de cada paso, ejecutar:
 - `sql/analytics/` → modelos SQL de BigQuery (tablas curadas)
 - `sql/qa/` → chequeos de QA reproducibles
 - `python/` → helpers de ingesta y generación de datos sintéticos
-- `docs/` → documentación del proyecto
+- `data/raw/` → archivos CSV fuente (sintéticos, sin PII)
+- `docs/` → esquema de datos y documentación del proyecto
 
 ---
 

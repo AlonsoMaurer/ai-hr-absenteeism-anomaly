@@ -190,10 +190,3 @@ After each step, run:
 - Intended use: operational investigation and prevention, not punitive action.
 
 ---
-
-## Next Steps
-- [ ] Add Power BI dashboard connected to `analytics.anomaly_alerts`
-- [ ] Document dataset schema (tables + columns + value descriptions)
-- [ ] Add `README_es.md` (Spanish version for Latam audience)
-- [ ] Optional: automate execution via dbt or GitHub Actions
-- [ ] Optional: implement MAD-based baseline as alternative to z-score

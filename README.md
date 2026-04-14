@@ -1,4 +1,5 @@
 # AI HR Absenteeism Anomaly Detection (MVP)
+> 🌎 [Versión en español disponible aquí](README_es.md)
 
 End-to-end AI Engineering portfolio project: **detect daily absenteeism anomalies** by **department + shift** for HRBPs, using **BigQuery (SQL)** + **Python** + **Power BI** + **GitHub**.
 

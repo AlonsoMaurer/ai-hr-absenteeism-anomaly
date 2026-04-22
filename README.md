@@ -47,7 +47,7 @@ This pipeline gives HRBPs a **daily, team-level anomaly signal** they can act on
 ## 2) Tech Stack
 - **BigQuery**: ingestion + analytics tables + anomaly detection logic (SQL)
 - **Python (Colab)**: synthetic data generation + ingestion helper for malformed CSV
-- **Power BI**: dashboard on `analytics.anomaly_alerts`
+- **Power BI**: dashboard on `analytics.anomaly_alerts` · dark theme · DAX anomaly measures · shift slicer
 - **GitHub**: versioned SQL models, QA checks, and documentation
 
 ---
@@ -205,6 +205,7 @@ After each step, run:
 - `python/` → ingestion helper(s) and synthetic data generation
 - `data/raw/` → source CSV files (synthetic, no PII)
 - `docs/` → data schema and project documentation
+- `docs/dashboard/` → Power BI report, dark theme JSON, and visual layer documentation
 
 ---
 

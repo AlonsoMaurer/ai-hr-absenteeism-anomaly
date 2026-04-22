@@ -47,7 +47,7 @@ Este pipeline entrega a los HRBPs una **señal diaria de anomalías a nivel de e
 ## 2) Stack tecnológico
 - **BigQuery**: ingesta + tablas analíticas + lógica de detección de anomalías (SQL)
 - **Python (Colab)**: generación de datos sintéticos + helper de ingesta para CSV malformados
-- **Power BI**: dashboard sobre `analytics.anomaly_alerts`
+- **Power BI**: dashboard sobre `analytics.anomaly_alerts` · tema oscuro · medidas DAX de anomalías · slicer de turnos
 - **GitHub**: modelos SQL versionados, chequeos de QA y documentación
 
 ---
@@ -203,6 +203,7 @@ Después de cada paso, ejecutar:
 - `python/` → helpers de ingesta y generación de datos sintéticos
 - `data/raw/` → archivos CSV fuente (sintéticos, sin PII)
 - `docs/` → esquema de datos y documentación del proyecto
+- `docs/dashboard/` → reporte Power BI, tema oscuro JSON y documentación de la capa visual
 
 ---
 

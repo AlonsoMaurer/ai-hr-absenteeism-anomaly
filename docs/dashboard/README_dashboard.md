@@ -1,3 +1,5 @@
+> 🌎 [Versión en español disponible aquí](README_es.md)
+
 # Power BI Dashboard — HR Absenteeism Anomaly Monitor
 
 > Part of [`ai-hr-absenteeism-anomaly`](https://github.com/AlonsoMaurer/ai-hr-absenteeism-anomaly) · Located in `docs/dashboard/`

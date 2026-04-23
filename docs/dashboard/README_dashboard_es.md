@@ -1,12 +1,16 @@
 # Power BI Dashboard — Monitor de Anomalías de Ausentismo
 
 > Parte de [`ai-hr-absenteeism-anomaly`](https://github.com/AlonsoMaurer/ai-hr-absenteeism-anomaly) · Ubicado en `docs/dashboard/`
+> 🇬🇧 [English version available here](README.md)
 
 Dashboard interactivo de Power BI construido sobre `analytics.anomaly_alerts`. Diseñado para uso diario de HRBPs: revisar alertas de anomalías priorizadas por departamento y turno, filtradas por severidad y z-score.
 
 **Archivos en esta carpeta:**
 - `Dashboard3.pbix` — archivo de reporte Power BI
 - `HR_Anomaly_Dark_Theme.json` — tema oscuro personalizado (importar desde Ver → Temas)
+- `dashboard_preview.pdf` — exportación estática del dashboard en PDF (no requiere licencia de Power BI Service)
+
+> **Nota:** El dashboard no está publicado en Power BI Service. El archivo `.pbix` y la exportación PDF se incluyen para revisión de portfolio. Para interactuar con el reporte en vivo, abrir `Dashboard3.pbix` en Power BI Desktop.
 
 ---
 
@@ -14,23 +18,25 @@ Dashboard interactivo de Power BI construido sobre `analytics.anomaly_alerts`. D
 
 El dashboard responde la misma pregunta de negocio que el pipeline:
 
-> *¿Qué combinaciones de departamento + turno muestran ausentismo anómalo hoy en comparación con su propia línea base de 28 días — y qué tan severa es la desviación?*
+> *¿Qué combinaciones área + turno muestran ausentismo anómalo hoy en comparación con su propia línea base de 28 días — y qué tan severa es la desviación?*
 
 Lo presenta en cinco visualizaciones:
 
-| Visual | Qué muestra |
-|---|---|
-| Tarjetas KPI | Total de anomalías, cantidad de alta severidad, tasa promedio de ausentismo, departamentos afectados — todas responden al filtro de turno |
-| Anomalías por depto (barras) | Conteo total de anomalías por departamento, orden descendente |
-| Heatmap depto × turno (matriz) | Conteo de anomalías por celda depto-turno; intensidad de color = frecuencia |
-| Tendencia diaria (línea) | Conteo de anomalías por día en los últimos 30 días |
-| Tabla de alertas | Una fila por departamento — peor anomalía, ordenada por z-score desc; pills de severidad con código de color |
+| Visual | Tipo | Qué muestra |
+|---|---|---|
+| Tarjetas KPI | Card | Total de anomalías · cantidad de alta severidad · tasa promedio de ausentismo · departamentos afectados — todas responden al slicer de turno |
+| Anomalías por depto | Barras horizontales | Conteo total de anomalías por departamento, orden descendente |
+| Heatmap depto × turno | Matriz | Conteo de anomalías por celda depto-turno; gradiente de color `#1F2535 → #F97316 → #EF4444` |
+| Daily Anomaly Trend — Last 30 Days | Línea | Conteo de anomalías por día (día 1–30); filtrado a `is_anomaly = 1` |
+| Tabla de alertas | Tabla | Una fila por departamento — peor anomalía, ordenada por `Max Z-Score` desc; color semántico en tasa de ausentismo y pills de severidad |
+
+**Slicer de turno:** botones estilo tile (1 / 2 / 3) filtran todos los visuales simultáneamente.
 
 ---
 
 ## 2) Fuente de datos
 
-**Tabla:** `analytics.anomaly_alerts` (BigQuery, importada en modo Import de Power BI)
+**Tabla:** `analytics.anomaly_alerts` (BigQuery, modo Import de Power BI)
 
 | Columna | Tipo | Descripción |
 |---|---|---|
@@ -116,10 +122,15 @@ El modo DirectQuery de Power BI contra BigQuery introduce latencia en cada inter
 
 **Decisión:** modo Import con refresh manual para el MVP. Aceptable dado el ciclo de actualización diaria de `analytics.anomaly_alerts`. El despliegue en producción usaría refresh programado vía Power BI Service.
 
-### E) Nombres de departamento en blanco
-Los registros asociados a IDs de departamento deduplicados (2 y 9 — ver README principal, Sección 5E) producen filas sin coincidencia en el join de Power BI.
+### E) Sin publicación en Power BI Service
+La publicación en Power BI Service requiere licencia Pro o Premium.
 
-**Decisión:** filtrados a nivel de visualización mediante `department_name is not blank`. Esto es consistente con el manejo documentado en el README principal del pipeline. La solución permanente (remapeo de IDs en SQL) es una mejora futura documentada.
+**Decisión:** distribuir como `.pbix` + exportación PDF para fines de portfolio. El PDF provee una vista estática del dashboard sin requerir Power BI Desktop. El `.pbix` permite interacción completa para revisores que tengan Power BI Desktop instalado.
+
+### F) Nombres de departamento en blanco
+Los registros asociados a IDs de departamento deduplicados (2 y 9 — ver README principal, Sección 5E) generan filas sin match en el join de Power BI.
+
+**Decisión:** filtrados a nivel de visualización mediante `department_name is not blank`. La corrección permanente (remapeo de IDs en SQL) es una mejora futura documentada.
 
 ---
 

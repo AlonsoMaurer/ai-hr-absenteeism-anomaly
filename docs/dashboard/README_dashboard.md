@@ -1,14 +1,16 @@
-> 🌎 [Versión en español disponible aquí](README_es.md)
-
 # Power BI Dashboard — HR Absenteeism Anomaly Monitor
 
 > Part of [`ai-hr-absenteeism-anomaly`](https://github.com/AlonsoMaurer/ai-hr-absenteeism-anomaly) · Located in `docs/dashboard/`
+> 🌎 [Versión en español disponible aquí](README_es.md)
 
 Interactive Power BI dashboard built on `analytics.anomaly_alerts`. Designed for daily HRBP use: review prioritized anomaly alerts by department and shift, filtered by severity and z-score.
 
 **Files in this folder:**
 - `Dashboard3.pbix` — Power BI report file
 - `HR_Anomaly_Dark_Theme.json` — custom dark theme (import via View → Themes)
+- `dashboard_preview.pdf` — static PDF export of the dashboard (no Power BI Service license required)
+
+> **Note:** The dashboard is not published to Power BI Service. The `.pbix` file and PDF export are provided for portfolio review. To interact with the live report, open `Dashboard3.pbix` in Power BI Desktop.
 
 ---
 
@@ -18,21 +20,23 @@ The dashboard answers the same business question as the pipeline:
 
 > *Which department + shift combinations show anomalous absenteeism today compared to their own 28-day baseline — and how severe is the deviation?*
 
-It surfaces this in four visuals:
+It surfaces this in five visuals:
 
-| Visual | What it shows |
-|---|---|
-| KPI cards | Total anomalies, high severity count, avg absence rate, depts affected — all respond to shift filter |
-| Anomalies by dept (bar) | Total anomaly count per department, sorted descending |
-| Dept × Shift heatmap (matrix) | Anomaly count per dept-shift cell; color intensity = frequency |
-| Daily trend (line) | Anomaly count per day over the last 30 days |
-| Alert detail (table) | One row per department — worst anomaly, sorted by z-score desc; severity pills color-coded |
+| Visual | Type | What it shows |
+|---|---|---|
+| KPI cards | Card | Total anomalies · high severity count · avg absence rate · depts affected — all respond to shift slicer |
+| Anomalies by dept | Horizontal bar | Total anomaly count per department, sorted descending |
+| Dept × Shift heatmap | Matrix | Anomaly count per dept-shift cell; color gradient `#1F2535 → #F97316 → #EF4444` |
+| Daily Anomaly Trend — Last 30 Days | Line | Anomaly count per day (day 1–30); filtered to `is_anomaly = 1` |
+| Alert detail table | Table | One row per department — worst anomaly, sorted by `Max Z-Score` desc; semantic color on absence rate and severity pills |
+
+**Shift slicer:** tile-style buttons (1 / 2 / 3) filter all visuals simultaneously.
 
 ---
 
 ## 2) Data Source
 
-**Table:** `analytics.anomaly_alerts` (BigQuery, imported via Power BI Import mode)
+**Table:** `analytics.anomaly_alerts` (BigQuery, Power BI Import mode)
 
 | Column | Type | Description |
 |---|---|---|
@@ -109,7 +113,7 @@ The underlying table has one row per dept-shift-day. Displaying it raw produces 
 **Decision:** the alert table aggregates to one row per department using `Max Z-Score`, `Max Absence Rate`, and `Top Severity Label` — showing the worst anomaly per dept. The trade-off is loss of shift-level detail in this view; the heatmap covers that angle.
 
 ### C) Day number on trend axis
-The synthetic dataset spans a fixed historical period (not rolling from today). Using calendar dates on the axis produced a confusing chart with months from 2024–2025.
+The synthetic dataset spans a fixed historical period (not rolling from today). Using calendar dates on the axis produced a confusing chart spanning 2024–2025.
 
 **Decision:** use `Día` (day number 1–30) on the X axis with the title "Daily Anomaly Trend — Last 30 Days". This keeps the framing consistent regardless of when the file is opened. The trade-off is loss of specific date references.
 
@@ -118,10 +122,15 @@ Power BI's DirectQuery mode against BigQuery introduces latency on every visual 
 
 **Decision:** Import mode with manual refresh for the MVP. Acceptable given the daily refresh cadence of `analytics.anomaly_alerts`. Production deployment would use scheduled refresh via Power BI Service.
 
-### E) Blank department names
+### E) No Power BI Service publishing
+Publishing to Power BI Service requires a Pro or Premium license.
+
+**Decision:** distribute as `.pbix` + PDF export for portfolio purposes. The PDF provides a static view of the dashboard without requiring Power BI Desktop. The `.pbix` allows full interaction for reviewers with Power BI Desktop installed.
+
+### F) Blank department names
 Records associated with deduplicated department IDs (2 and 9 — see main README, Section 5E) produce unmatched rows in the Power BI join.
 
-**Decision:** filtered out at the visualization layer via `department_name is not blank`. This is consistent with the handling documented in the main pipeline README. The permanent fix (ID remapping in SQL) is a documented future improvement.
+**Decision:** filtered out at the visualization layer via `department_name is not blank`. The permanent fix (ID remapping in SQL) is a documented future improvement.
 
 ---
 

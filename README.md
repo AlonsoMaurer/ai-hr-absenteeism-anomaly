@@ -205,7 +205,7 @@ After each step, run:
 - `python/` → ingestion helper(s) and synthetic data generation
 - `data/raw/` → source CSV files (synthetic, no PII)
 - `docs/` → data schema and project documentation
-- `docs/dashboard/` → Power BI report, dark theme JSON, and visual layer documentation
+- `docs/dashboard/` → Power BI report (.pbix), dark theme JSON, PDF preview, and visual layer documentation
 
 ---
 

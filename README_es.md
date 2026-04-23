@@ -203,7 +203,7 @@ Después de cada paso, ejecutar:
 - `python/` → helpers de ingesta y generación de datos sintéticos
 - `data/raw/` → archivos CSV fuente (sintéticos, sin PII)
 - `docs/` → esquema de datos y documentación del proyecto
-- `docs/dashboard/` → reporte Power BI, tema oscuro JSON y documentación de la capa visual
+- `docs/dashboard/` → reporte Power BI (.pbix), tema oscuro JSON, vista previa PDF y documentación de la capa visual
 
 ---
 
